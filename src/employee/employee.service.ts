@@ -1,35 +1,35 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { Employee } from './interfaces/employee.interface';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Employee } from './entities/employee.entities';
 
 @Injectable()
 export class EmployeeService {
-  private employees: Employee[] = [];
-  private idCounter = 1;
+  constructor(
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
+  ) {}
 
-  createEmployee(employeeData: CreateEmployeeDto) {
-    const newEmployee = {
-      id: this.idCounter++,
-      ...employeeData,
-    };
-    this.employees.push(newEmployee);
-    return newEmployee;
+  async createEmployee(employeeData: CreateEmployeeDto) {
+    return await this.employeeRepository.save(employeeData);
   }
 
-  createEmployeesBulk(employeesData: CreateEmployeeDto[]) {
-    const newEmployees = employeesData.map((employeeData) => {
-      const newEmployee = {
-        id: this.idCounter++,
-        ...employeeData,
-      };
-      this.employees.push(newEmployee);
-      return newEmployee;
+  async createEmployeesBulk(employeesData: CreateEmployeeDto[]) {
+    return await this.employeeRepository.save(employeesData);
+  }
+
+  async getAllEmployees(page?: string, limit?: string) {
+    const skip = Number(page);
+    const take = Number(limit);
+
+    return await this.employeeRepository.find({ skip, take });
+  }
+
+  async getEmployeeById(id: number) {
+    const employee = await this.employeeRepository.findOne({
+      where: { id },
     });
-    return newEmployees;
-  }
-
-  getEmployeeById(id: number) {
-    const employee = this.getAllEmployees().find((emp) => emp.id === id);
 
     if (!employee) {
       throw new NotFoundException('Employee not found');
@@ -38,24 +38,21 @@ export class EmployeeService {
     return employee;
   }
 
-  updateEmployee(id: number, employeeData: CreateEmployeeDto) {
-    const employee = this.getEmployeeById(id);
+  async updateEmployee(id: number, employeeData: CreateEmployeeDto) {
+    const employee = await this.getEmployeeById(id);
+
     Object.assign(employee, employeeData);
-    return employee;
+
+    return await this.employeeRepository.save(employee);
   }
 
-  getAllEmployees() {
-    return this.employees;
-  }
+  async deleteEmployee(id: number) {
+    await this.getEmployeeById(id);
 
-  deleteEmployee(id: number) {
-    const employeeIndex = this.getAllEmployees().findIndex(
-      (emp) => emp.id === id,
-    );
+    await this.employeeRepository.delete(id);
 
-    if (employeeIndex === -1) {
-      throw new NotFoundException('Employee not found');
-    }
-    return this.employees.splice(employeeIndex, 1)[0];
+    return {
+      message: 'Employee deleted successfully',
+    };
   }
 }

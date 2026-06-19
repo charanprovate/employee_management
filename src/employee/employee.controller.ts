@@ -1,45 +1,72 @@
-import { Controller, Delete, Put } from '@nestjs/common';
-import { Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
+// TODO: add auth guard with jwt strategy and role based access control
+@ApiTags('Employee')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('employee')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
   @Get()
-  getAllEmployees() {
-    return this.employeeService.getAllEmployees();
+  getAllEmployees(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.employeeService.getAllEmployees(page, limit);
   }
 
   @Get(':id')
-  getEmployeeById(@Param('id', ParseIntPipe) id: number) {
-    const employee = this.employeeService.getEmployeeById(id);
-
-    return employee;
+  async getEmployeeById(@Param('id', ParseIntPipe) id: number) {
+    return await this.employeeService.getEmployeeById(id);
   }
 
+  @Roles('admin', 'admin-jr')
   @Post()
-  createEmployee(@Body() employeeData: CreateEmployeeDto) {
-    return this.employeeService.createEmployee(employeeData);
+  @UseGuards(RolesGuard)
+  async createEmployee(@Body() employeeData: CreateEmployeeDto) {
+    return await this.employeeService.createEmployee(employeeData);
   }
 
+  @Roles('admin', 'admin-jr')
   @Post('bulk')
-  createEmployeesBulk(@Body() employeesData: CreateEmployeeDto[]) {
-    return this.employeeService.createEmployeesBulk(employeesData);
+  @UseGuards(RolesGuard)
+  async createEmployeesBulk(@Body() employeesData: CreateEmployeeDto[]) {
+    return await this.employeeService.createEmployeesBulk(employeesData);
   }
 
+  @Roles('admin', 'admin-jr')
   @Put(':id')
-  updateEmployee(
+  @UseGuards(RolesGuard)
+  async updateEmployee(
     @Param('id', ParseIntPipe) id: number,
     @Body() employeeData: CreateEmployeeDto,
   ) {
-    return this.employeeService.updateEmployee(id, employeeData);
+    return await this.employeeService.updateEmployee(id, employeeData);
   }
 
+  @Roles('admin')
   @Delete(':id')
-  deleteEmployee(@Param('id', ParseIntPipe) id: number) {
-    this.employeeService.deleteEmployee(id);
-    return { message: 'Employee deleted successfully' };
+  @UseGuards(RolesGuard)
+  async deleteEmployee(@Param('id', ParseIntPipe) id: number) {
+    return await this.employeeService.deleteEmployee(id);
   }
 }
