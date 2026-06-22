@@ -7,7 +7,7 @@ export class HealthController {
 
   @Get()
   async getHealth() {
-    await this.dataSource.query('SELECT 1');
+    await this.dataSource.query('SELECT 1'); 
 
     return {
       status: 'UP',

@@ -19,11 +19,26 @@ export class EmployeeService {
     return await this.employeeRepository.save(employeesData);
   }
 
-  async getAllEmployees(page?: string, limit?: string) {
-    const skip = Number(page);
-    const take = Number(limit);
+  async getAllEmployees(
+    page?: string,
+    limit?: string,
+    department?: string,
+    designation?: string,
+  ) {
+    const skip = Number(page) ? (Number(page) - 1) * Number(limit || 10) : 0;
+    const take = Number(limit) || 10;
 
-    return await this.employeeRepository.find({ skip, take });
+    const findOptions: any = { skip, take };
+
+    if (department) {
+      findOptions.where = { ...findOptions.where, department };
+    }
+
+    if (designation) {
+      findOptions.where = { ...findOptions.where, designation };
+    }
+
+    return await this.employeeRepository.find(findOptions);
   }
 
   async getEmployeeById(id: number) {

@@ -30,8 +30,15 @@ export class EmployeeController {
   getAllEmployees(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('department') department?: string,
+    @Query('designation') designation?: string,
   ) {
-    return this.employeeService.getAllEmployees(page, limit);
+    return this.employeeService.getAllEmployees(
+      page,
+      limit,
+      department,
+      designation,
+    );
   }
 
   @Get(':id')
